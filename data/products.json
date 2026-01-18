@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Hair Cream",
+    "brand": "Lakme",
+    "category": "Hair Cosmatic",
+    "sku": "HKL001",
+    "cost_price": 100.0,
+    "selling_price": 90.0,
+    "quantity": 5,
+    "low_stock_threshold": 2,
+    "description": "Cool product",
+    "id": 1
+  }
+]

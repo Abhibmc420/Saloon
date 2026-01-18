@@ -1,0 +1,7 @@
+*.bin
+MyApi/obj/
+MyWebApp/bin/
+node_modules/
+MyWebApp/wwwroot/
+MyWebApp/obj/
+MyApi/bin/

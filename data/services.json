@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Hair Cut",
+    "category": "Cutting",
+    "base_price": 20.0,
+    "duration": 30,
+    "description": "",
+    "pricing_tiers": [
+      {
+        "name": "Basic",
+        "price": 20.0
+      },
+      {
+        "name": "Premium",
+        "price": 30.0
+      }
+    ],
+    "add_ons": [],
+    "id": 7
+  }
+]
