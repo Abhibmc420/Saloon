@@ -120,7 +120,17 @@ class DbProductsManager:
                                 updated_product['quantity'] -= 1
                                 if self._update_product(int(product['id']), updated_product):
                                     st.success("Stock updated!")
-                                    st.rerun()
+                                    try:
+                                        if hasattr(st, 'experimental_rerun'):
+                                            st.experimental_rerun()
+                                        elif hasattr(st, 'rerun'):
+                                            st.rerun()
+                                        else:
+                                            st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                            st.stop()
+                                    except Exception:
+                                        st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                        st.stop()
                     
                     with stock_col2:
                         if st.button(f"➕ Add 1", key=f"add_stock_{product['id']}"):
@@ -128,16 +138,32 @@ class DbProductsManager:
                             updated_product['quantity'] += 1
                             if self._update_product(int(product['id']), updated_product):
                                 st.success("Stock updated!")
-                                st.rerun()
-                    
-                    with stock_col3:
+                                try:
+                                    if hasattr(st, 'experimental_rerun'):
+                                        st.experimental_rerun()
+                                    elif hasattr(st, 'rerun'):
+                                        st.rerun()
+                                    else:
+                                        st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                        st.stop()
+                                except Exception:
+                                    st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                    st.stop()
                         # Delete button
                         if st.button(f"🗑️ Delete", key=f"delete_product_{product['id']}"):
                             if self._delete_product(int(product['id'])):
                                 st.success(f"Product '{product['name']}' deleted successfully!")
-                                st.rerun()
-                            else:
-                                st.error("Failed to delete product.")
+                                try:
+                                    if hasattr(st, 'experimental_rerun'):
+                                        st.experimental_rerun()
+                                    elif hasattr(st, 'rerun'):
+                                        st.rerun()
+                                    else:
+                                        st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                        st.stop()
+                                except Exception:
+                                    st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                    st.stop()
     
     def add_product_form(self):
         """Form to add a new product"""
@@ -178,7 +204,17 @@ class DbProductsManager:
 
                     if self._add_product(product_data):
                         st.success(f"Product '{name}' added successfully!")
-                        st.rerun()
+                        try:
+                            if hasattr(st, 'experimental_rerun'):
+                                st.experimental_rerun()
+                            elif hasattr(st, 'rerun'):
+                                st.rerun()
+                            else:
+                                st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                st.stop()
+                        except Exception:
+                            st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                            st.stop()
                     else:
                         st.error("Failed to add product.")
                 else:
@@ -237,7 +273,17 @@ class DbProductsManager:
                             
                             if self._update_product(product_id, updated_product):
                                 st.success(f"Product '{name}' updated successfully!")
-                                st.rerun()
+                                try:
+                                    if hasattr(st, 'experimental_rerun'):
+                                        st.experimental_rerun()
+                                    elif hasattr(st, 'rerun'):
+                                        st.rerun()
+                                    else:
+                                        st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                        st.stop()
+                                except Exception:
+                                    st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                    st.stop()
                             else:
                                 st.error("Failed to update product.")
                         else:

@@ -85,7 +85,17 @@ class ServicesManager:
                     if st.button(f"🗑️ Delete {service['name']}", key=f"delete_service_{service['id']}"):
                         if self.data_manager.delete_item(int(service['id'])):
                             st.success(f"Service '{service['name']}' deleted successfully!")
-                            st.rerun()
+                            try:
+                                if hasattr(st, 'experimental_rerun'):
+                                    st.experimental_rerun()
+                                elif hasattr(st, 'rerun'):
+                                    st.rerun()
+                                else:
+                                    st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                    st.stop()
+                            except Exception:
+                                st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                st.stop()
                         else:
                             st.error("Failed to delete service.")
     

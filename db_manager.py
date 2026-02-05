@@ -1,4 +1,5 @@
-from models import DatabaseManager, Service, Product, Customer, Staff, Booking
+from __future__ import annotations
+from models import DatabaseManager, Service, Product, Customer, Staff, Booking, User, Invoice
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Dict, Any, Optional
@@ -224,7 +225,32 @@ class DatabaseCustomerManager:
             return [self._customer_to_dict(customer) for customer in customers]
         finally:
             session.close()
-    
+
+    def get_or_create_customer_by_email(self, email: str, first_name: str = 'Guest', last_name: str = '') -> Dict[str, Any]:
+        session = self.db_manager.get_session()
+        try:
+            customer = session.query(Customer).filter(Customer.email == email).first()
+            if customer:
+                return self._customer_to_dict(customer)
+            # Create a new customer with minimal fields
+            customer = Customer(first_name=first_name, last_name=last_name or '', email=email)
+            session.add(customer)
+            session.commit()
+            return self._customer_to_dict(customer)
+        except Exception as e:
+            session.rollback()
+            print(f"Error get_or_create_customer_by_email: {e}")
+            return {}
+        finally:
+            session.close()
+
+    def get_customer_by_email(self, email: str) -> Dict[str, Any]:
+        session = self.db_manager.get_session()
+        try:
+            customer = session.query(Customer).filter(Customer.email == email).first()
+            return self._customer_to_dict(customer) if customer else {}
+        finally:
+            session.close()    
     def get_customer_by_id(self, customer_id: int) -> Optional[Dict[str, Any]]:
         """Get customer by ID"""
         session = self.db_manager.get_session()
@@ -310,6 +336,107 @@ class DatabaseCustomerManager:
             'address': customer.address,
             'notes': customer.notes
         }
+
+class DatabaseUserManager:
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+
+    def get_all_users(self) -> List[Dict[str, Any]]:
+        session = self.db_manager.get_session()
+        try:
+            users = session.query(User).all()
+            return [self._user_to_dict(u) for u in users]
+        finally:
+            session.close()
+
+    def get_user_by_email(self, email: str):
+        session = self.db_manager.get_session()
+        try:
+            return session.query(User).filter(User.email == email).first()
+        finally:
+            session.close()
+
+    def set_admin(self, user_id: int, is_admin: bool) -> bool:
+        return self.db_manager.set_user_admin(user_id, is_admin)
+
+    def _user_to_dict(self, user: User) -> Dict[str, Any]:
+        return {
+            'id': user.id,
+            'email': user.email,
+            'full_name': user.full_name,
+            'is_admin': user.is_admin,
+            'is_active': user.is_active
+        }
+
+
+class DatabaseInvoiceManager:
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+
+    def create_invoice(self, booking_id: int, amount: float, currency: str = 'INR', upi_uri: str = None, upi_qr: str = None) -> Dict[str, Any]:
+        session = self.db_manager.get_session()
+        try:
+            # simple invoice number pattern
+            from datetime import datetime
+            invoice_no = f"INV{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{booking_id}"
+            invoice = Invoice(invoice_number=invoice_no, booking_id=booking_id, amount=amount, currency=currency, upi_uri=upi_uri, upi_qr=upi_qr)
+            session.add(invoice)
+            session.commit()
+            session.refresh(invoice)
+            return {
+                'id': invoice.id,
+                'invoice_number': invoice.invoice_number,
+                'booking_id': invoice.booking_id,
+                'amount': invoice.amount,
+                'currency': invoice.currency,
+                'status': invoice.status,
+                'upi_uri': invoice.upi_uri,
+                'upi_qr': invoice.upi_qr
+            }
+        except Exception as e:
+            session.rollback()
+            print(f"Error creating invoice: {e}")
+            return {}
+        finally:
+            session.close()
+
+    def get_invoice(self, invoice_id: int) -> Dict[str, Any]:
+        session = self.db_manager.get_session()
+        try:
+            inv = session.query(Invoice).filter(Invoice.id == invoice_id).first()
+            if not inv:
+                return {}
+            return {
+                'id': inv.id,
+                'invoice_number': inv.invoice_number,
+                'booking_id': inv.booking_id,
+                'amount': inv.amount,
+                'currency': inv.currency,
+                'status': inv.status,
+                'upi_uri': inv.upi_uri,
+                'upi_qr': inv.upi_qr,
+                'created_at': inv.created_at,
+                'paid_at': inv.paid_at
+            }
+        finally:
+            session.close()
+
+    def mark_paid(self, invoice_id: int) -> bool:
+        session = self.db_manager.get_session()
+        try:
+            inv = session.query(Invoice).filter(Invoice.id == invoice_id).first()
+            if not inv:
+                return False
+            inv.status = 'paid'
+            inv.paid_at = datetime.utcnow()
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Error marking invoice paid: {e}")
+            return False
+        finally:
+            session.close()
 
 class DatabaseStaffManager:
     def __init__(self, db_manager: DatabaseManager):

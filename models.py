@@ -1,4 +1,4 @@
-from flask.cli import load_dotenv
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, Boolean, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -84,7 +84,7 @@ class Booking(Base):
     staff_id = Column(Integer, ForeignKey('staff.id'))
     appointment_datetime = Column(DateTime, nullable=False)
     end_datetime = Column(DateTime, nullable=False)
-    status = Column(String(20), default='scheduled')  # scheduled, completed, cancelled, no_show
+    status = Column(String(20), default='scheduled')  # scheduled, requested, approved, completed, cancelled, no_show
     total_price = Column(Float, nullable=False)
     payment_status = Column(String(20), default='pending')  # pending, paid, refunded
     payment_method = Column(String(50))
@@ -98,19 +98,63 @@ class Booking(Base):
     service = relationship("Service", back_populates="bookings")
     staff_member = relationship("Staff", back_populates="bookings")
 
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), unique=True, nullable=False)
+    full_name = Column(String(255))
+    google_id = Column(String(255), unique=True)
+    is_admin = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<User {self.email} is_admin={self.is_admin}>"
+
+class Invoice(Base):
+    __tablename__ = 'invoices'
+
+    id = Column(Integer, primary_key=True)
+    invoice_number = Column(String(50), unique=True, nullable=False)
+    booking_id = Column(Integer, ForeignKey('bookings.id'), nullable=False)
+    amount = Column(Float, nullable=False)
+    currency = Column(String(10), default='INR')
+    status = Column(String(20), default='pending')  # pending, paid, cancelled
+    upi_uri = Column(String(1024))
+    upi_qr = Column(String(255))  # filename or data-uri
+    created_at = Column(DateTime, default=datetime.utcnow)
+    paid_at = Column(DateTime)
+
+    # relationship back to booking
+    booking = relationship("Booking")
+
+    def __repr__(self):
+        return f"<Invoice {self.invoice_number} {self.status} {self.amount}>"
+
 # Database configuration
 class DatabaseManager:
     def __init__(self):
         print("Initializing Database Manager");
-        load_dotenv()  # loads the environment variables from .env BMC
-        #print("URL: " + str(os.getenv('DATABASE_URL')))
-        self.database_url = os.getenv('DATABASE_URL');
-       # self.database_url = "postgresql://postgres:Admin123@localhost:5432/Saloon";
-        #print(f"Initializing Database Manager successful" +str(self.database_url));
-        if not self.database_url:
-            raise ValueError("DATABASE_URL environment variable is required")
-        
-        self.engine = create_engine(self.database_url)
+        load_dotenv()  # loads the environment variables from .env
+        # Prefer SQLITE_PATH if explicitly set (useful for tests and dev); otherwise use DATABASE_URL; fallback to local sqlite
+        sqlite_path_env = os.getenv('SQLITE_PATH')
+        database_url_env = os.getenv('DATABASE_URL')
+
+        if sqlite_path_env:
+            self.database_url = f"sqlite:///{sqlite_path_env}"
+            print(f"Using SQLITE_PATH env var — SQLite DB at {sqlite_path_env}")
+        elif database_url_env:
+            self.database_url = database_url_env
+        else:
+            sqlite_path = 'salon.db'
+            self.database_url = f"sqlite:///{sqlite_path}"
+            print(f"No DATABASE_URL found — falling back to SQLite database at {sqlite_path}")
+
+        # For SQLite, provide connect_args to avoid thread check issues when used by frameworks
+        connect_args = {"check_same_thread": False} if self.database_url.startswith("sqlite") else {}
+        self.engine = create_engine(self.database_url, connect_args=connect_args)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
     
     def create_tables(self):
@@ -121,6 +165,60 @@ class DatabaseManager:
         """Get a database session"""
         return self.SessionLocal()
     
+    def get_or_create_user(self, email: str, full_name: str = None, google_id: str = None, is_admin: bool = False):
+        session = self.get_session()
+        try:
+            user = session.query(User).filter(User.email == email).first()
+            if user:
+                # return a plain dict to avoid detached instance problems
+                return {
+                    'id': user.id,
+                    'email': user.email,
+                    'full_name': user.full_name,
+                    'is_admin': user.is_admin,
+                    'google_id': user.google_id
+                }
+            user = User(email=email, full_name=full_name, google_id=google_id, is_admin=is_admin)
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+            return {
+                'id': user.id,
+                'email': user.email,
+                'full_name': user.full_name,
+                'is_admin': user.is_admin,
+                'google_id': user.google_id
+            }
+        except Exception as e:
+            session.rollback()
+            print(f"Error creating/getting user: {e}")
+            return None
+        finally:
+            session.close()
+
+    def set_user_admin(self, user_id: int, is_admin: bool) -> bool:
+        session = self.get_session()
+        try:
+            user = session.query(User).filter(User.id == user_id).first()
+            if not user:
+                return False
+            user.is_admin = is_admin
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Error updating user admin status: {e}")
+            return False
+        finally:
+            session.close()
+
+    def list_users(self):
+        session = self.get_session()
+        try:
+            return session.query(User).all()
+        finally:
+            session.close()
+
     def migrate_json_data(self, services_data, products_data):
         """Migrate existing JSON data to database"""
         session = self.get_session()

@@ -1,0 +1,13 @@
+alembic>=1.16.5
+pandas>=2.3.2
+plotly>=6.3.0
+psycopg2-binary>=2.9.10
+sqlalchemy>=2.0.43
+streamlit>=1.49.1
+pytest>=7.0
+python-dotenv>=1.0.0
+google-auth>=2.20.0
+google-auth-oauthlib>=1.0.0
+requests>=2.31.0
+qrcode>=7.3
+reportlab>=4.0

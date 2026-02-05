@@ -1,10 +1,13 @@
 {
-  "name": "salonsavvy",
+  "name": "saloon",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "pytest -q",
+    "db:init": "python manage_db.py init",
+    "db:seed": "python manage_db.py seed",
+    "db:status": "python manage_db.py status"
   },
   "keywords": [],
   "author": "",

@@ -101,7 +101,17 @@ class DbServicesManager:
                     if st.button(f"🗑️ Delete {service['name']}", key=f"delete_service_{service['id']}"):
                         if self._delete_service(int(service['id'])):
                             st.success(f"Service '{service['name']}' deleted successfully!")
-                            st.rerun()
+                            try:
+                                if hasattr(st, 'experimental_rerun'):
+                                    st.experimental_rerun()
+                                elif hasattr(st, 'rerun'):
+                                    st.rerun()
+                                else:
+                                    st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                    st.stop()
+                            except Exception:
+                                st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                st.stop()
                         else:
                             st.error("Failed to delete service.")
     
@@ -169,7 +179,17 @@ class DbServicesManager:
 
                     if self._add_service(service_data):
                         st.success(f"Service '{name}' added successfully!")
-                        st.rerun()
+                        try:
+                            if hasattr(st, 'experimental_rerun'):
+                                st.experimental_rerun()
+                            elif hasattr(st, 'rerun'):
+                                st.rerun()
+                            else:
+                                st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                st.stop()
+                        except Exception:
+                            st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                            st.stop()
                     else:
                         st.error("Failed to add service.")
                 else:
@@ -261,7 +281,17 @@ class DbServicesManager:
                             
                             if self._update_service(service_id, updated_service):
                                 st.success(f"Service '{name}' updated successfully!")
-                                st.rerun()
+                                try:
+                                    if hasattr(st, 'experimental_rerun'):
+                                        st.experimental_rerun()
+                                    elif hasattr(st, 'rerun'):
+                                        st.rerun()
+                                    else:
+                                        st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                        st.stop()
+                                except Exception:
+                                    st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                    st.stop()
                             else:
                                 st.error("Failed to update service.")
                         else:

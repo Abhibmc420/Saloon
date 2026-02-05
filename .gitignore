@@ -5,3 +5,17 @@ node_modules/
 MyWebApp/wwwroot/
 MyWebApp/obj/
 MyApi/bin/
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+.env
+.env.local
+
+# SQLite files
+*.db
+
+# IDE
+.vscode/

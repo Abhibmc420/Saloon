@@ -107,7 +107,17 @@ class StaffManager:
                             updated_staff['is_active'] = not staff['is_active']
                             if self.staff_manager.update_staff(int(staff['id']), updated_staff):
                                 st.success(f"Staff member {action_text.lower()}d successfully!")
-                                st.rerun()
+                                try:
+                                    if hasattr(st, 'experimental_rerun'):
+                                        st.experimental_rerun()
+                                    elif hasattr(st, 'rerun'):
+                                        st.rerun()
+                                    else:
+                                        st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                        st.stop()
+                                except Exception:
+                                    st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                    st.stop()
                             else:
                                 st.error(f"Failed to {action_text.lower()} staff member.")
                     
@@ -116,7 +126,17 @@ class StaffManager:
                         if st.button(f"🗑️ Delete", key=f"delete_staff_{staff['id']}"):
                             if self.staff_manager.delete_staff(int(staff['id'])):
                                 st.success(f"Staff member '{staff['full_name']}' deleted successfully!")
-                                st.rerun()
+                                try:
+                                    if hasattr(st, 'experimental_rerun'):
+                                        st.experimental_rerun()
+                                    elif hasattr(st, 'rerun'):
+                                        st.rerun()
+                                    else:
+                                        st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                        st.stop()
+                                except Exception:
+                                    st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                    st.stop()
                             else:
                                 st.error("Failed to delete staff member.")
     

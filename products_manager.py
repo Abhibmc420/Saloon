@@ -104,7 +104,17 @@ class ProductsManager:
                                 updated_product['quantity'] -= 1
                                 if self.data_manager.update_item(int(product['id']), dict(updated_product)):
                                     st.success("Stock updated!")
-                                    st.rerun()
+                                    try:
+                                        if hasattr(st, 'experimental_rerun'):
+                                            st.experimental_rerun()
+                                        elif hasattr(st, 'rerun'):
+                                            st.rerun()
+                                        else:
+                                            st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                            st.stop()
+                                    except Exception:
+                                        st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                        st.stop()
                     
                     with stock_col2:
                         if st.button(f"➕ Add 1", key=f"add_stock_{product['id']}"):
@@ -119,7 +129,17 @@ class ProductsManager:
                         if st.button(f"🗑️ Delete", key=f"delete_product_{product['id']}"):
                             if self.data_manager.delete_item(int(product['id'])):
                                 st.success(f"Product '{product['name']}' deleted successfully!")
-                                st.rerun()
+                                try:
+                                    if hasattr(st, 'experimental_rerun'):
+                                        st.experimental_rerun()
+                                    elif hasattr(st, 'rerun'):
+                                        st.rerun()
+                                    else:
+                                        st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                        st.stop()
+                                except Exception:
+                                    st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                    st.stop()
                             else:
                                 st.error("Failed to delete product.")
     

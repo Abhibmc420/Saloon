@@ -41,8 +41,17 @@ class CustomerManager:
         """Display list of customers"""
         st.subheader("Customers List")
         
-        customers = self.customer_manager.get_all_customers()
-        
+        user = st.session_state.get('user')
+
+        # If not admin, show only their own data
+        if user and not user.get('is_admin'):
+            customers = []
+            cust = self.customer_manager.get_customer_by_email(user.get('email'))
+            if cust:
+                customers = [cust]
+        else:
+            customers = self.customer_manager.get_all_customers()
+
         if not customers:
             st.info("No customers found. Add your first customer using the 'Add Customer' tab.")
             return
@@ -82,7 +91,17 @@ class CustomerManager:
                     if st.button(f"🗑️ Delete {customer['full_name']}", key=f"delete_customer_{customer['id']}"):
                         if self.customer_manager.delete_customer(int(customer['id'])):
                             st.success(f"Customer '{customer['full_name']}' deleted successfully!")
-                            st.rerun()
+                            try:
+                                if hasattr(st, 'experimental_rerun'):
+                                    st.experimental_rerun()
+                                elif hasattr(st, 'rerun'):
+                                    st.rerun()
+                                else:
+                                    st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                    st.stop()
+                            except Exception:
+                                st.session_state['_force_rerender'] = not st.session_state.get('_force_rerender', False)
+                                st.stop()
                         else:
                             st.error("Failed to delete customer.")
     
